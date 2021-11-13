@@ -12,10 +12,10 @@
 
 	2021-11-13	KMP	Initial release.
 
-	Known Issues
-	------------
+    Known Issues
+    ------------
 
-	- None.
+    - The dbccdb database must exist. If it is missing, an error is returned for the corresponding queries.
 
 	The MIT License
 	---------------
