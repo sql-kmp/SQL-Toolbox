@@ -22,7 +22,7 @@ GO
 	Known Issues
 	------------
 
-	- The script does not check in advance whether there has been identical alerts already created, just with a different name.
+	- The script does not check in advance if identical warnings have already been created, just with a different name.
 	- It is not checked whether the operator is assigned to job agents.
 	- Only 1 operator can be created.
 	- The created operator automatically becomes the failsafe operator.
