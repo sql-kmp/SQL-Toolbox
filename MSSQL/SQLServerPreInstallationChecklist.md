@@ -60,8 +60,8 @@ Starting point should be a fully patched operating system. Ideally, the operatin
   | (error) log files[^4]             | 4k = default cluster size                                    |
   | instance root w/ system databases | 4k should be ok, usually error log and trace files are stored in this directory structure |
 
-  [^3]:⚠at least 128 GB of space nowadays
-  [^4]:It should be considered store the error log files on a separate volume.
+  [^3]:at least 128 GB of space nowadays
+  [^4]:Sometimes it's a good idea to store the error log and trace files on a separate volume.
 
 - [ ] disable compression:
 
