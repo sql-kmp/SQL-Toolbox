@@ -9,14 +9,17 @@ GO
 
 	Parameter(s) to be set in advance:
 
-		@OperatorName	- A name/designation for the operator which will be configured. Notification configuration will be skipped if NULL.
-		@OperatorEMail	- A semicolon-separated list of email addresses. Notification configuration will be skipped if NULL.
+		@OperatorName	-	A name/designation for the operator which will be configured. Notification configuration will be skipped if NULL.
+		@OperatorEMail	-	A semicolon-separated list of email addresses. Notification configuration will be skipped if NULL.
+		@AddAOAGAlerts	-	Defines whether alerts related to AlwaysOn availability groups should be created. Default value is 0.
+							If SERVERPROPERTY('IsHadrEnabled') equals 0 or is NULL, creation of these warning messages is skipped.
 
 	If any of the parameters is NULL, the configuration of notifications as well as of the failsafe operator will be skipped.
 
 	Changelog
 	---------
 
+	2021-11-14	KMP	AOAG related alerts added, switched to CURSOR-based processing.
 	2021-11-13	KMP	Initial release.
 
 	Known Issues
@@ -55,16 +58,42 @@ GO
 
 DECLARE @OperatorName NVARCHAR(128) = NULL;
 DECLARE @OperatorEMail NVARCHAR(128) = NULL;
+DECLARE @AddAOAGAlerts BIT = 1;
 
 /*	*********************************************************************************
-	DO NOT CHANGE ANYTHING AFTER THIS LINE!
+	*                    DO NOT CHANGE ANYTHING AFTER THIS LINE!                    *
 	********************************************************************************* */
 
 SET NOCOUNT ON;
 
-/*	1 - Check if SQL Server Agent service is up and running.	*/
+DECLARE @Alerts TABLE (
+	[message_id] INT NOT NULL,
+	[severity] INT NOT NULL,
+	[alert_name] NVARCHAR(128) NOT NULL
+);
 
-RAISERROR (N'Check SQL Server Agent service ...', 10, 1) WITH NOWAIT;
+INSERT INTO @Alerts ( [message_id], [severity], [alert_name] )
+VALUES
+	(823, 0, N'Error 823: database integrity at risk'),
+	(824, 0, N'Error 824: database integrity at risk'),
+	(825, 0, N'Error 825: database integrity at risk'),
+	(0, 17, N'Severity 17 - insufficient resources'),
+	(0, 18, N'Severity 18 - non-fatal internal error'),
+	(0, 19, N'Severity 19 - fatal resource error'),
+	(0, 20, N'Severity 20 - fatal error in the current process'),
+	(0, 21, N'Severity 21 - fatal error in database processes'),
+	(0, 22, N'Severity 22 - fatal error: table integrity at risk'),
+	(0, 23, N'Severity 23 - fatal error: database integrity at risk'),
+	(0, 24, N'Severity 24 - fatal error: hardware error'),
+	(0, 25, N'Severity 25 - fatal error: system error');
+
+DECLARE @currentAlertMessageId INT;
+DECLARE @currentAlertSeverity INT;
+DECLARE @currentAlertName NVARCHAR(128);
+
+/*	1a - Check if SQL Server Agent service is up and running.	*/
+
+RAISERROR (N'Checking SQL Server Agent service ...', 10, 1) WITH NOWAIT;
 
 IF NOT EXISTS (
 	SELECT 1
@@ -79,189 +108,83 @@ END;
 
 RAISERROR (N'done.', 10, 1) WITH NOWAIT;
 
+/*	1b - Check if AlwaysOn is enabled.	*/
+
+RAISERROR (N'Checking for HADR availability ...', 10, 1) WITH NOWAIT;
+
+SET @AddAOAGAlerts = COALESCE(@AddAOAGAlerts, 0);
+
+IF (@AddAOAGAlerts = 1)
+BEGIN
+	IF (CONVERT(INT, PARSENAME(CONVERT(NVARCHAR(128), SERVERPROPERTY('ProductVersion')), 4)) < 11)
+	BEGIN
+		-- SQL Server 2012 and above only!
+		SET @AddAOAGAlerts = 0;
+		RAISERROR (N'AlwaysOn is not implemented in this version of SQL Server. Parameter @AddAOAGAlerts has been reset.', 10, 1) WITH NOWAIT;
+	END
+	ELSE
+	BEGIN
+		IF CONVERT(BIT, COALESCE(SERVERPROPERTY('IsHadrEnabled'), 0)) = 0
+		BEGIN
+			-- HADR is disabled
+			SET @AddAOAGAlerts = 0;
+			RAISERROR (N'AlwaysOn is disabled on instance level. Parameter @AddAOAGAlerts has been reset.', 10, 1) WITH NOWAIT;
+		END
+		ELSE
+		BEGIN
+			INSERT INTO @Alerts ( [message_id], [severity], [alert_name] )
+			VALUES
+				(35273, 0, N'AOAG Error 35273: bypassing recovery'),
+				(35274, 0, N'AOAG Error 35274: recovery pending'),
+				(35275, 0, N'AOAG Error 35275: database potentially damaged'),
+				(35254, 0, N'AOAG Error 35254: metadata error'),
+				(35279, 0, N'AOAG Error 35279: join rejected'),
+				(35276, 0, N'AOAG Error 35276: failed to allocate database'),
+				(35264, 0, N'AOAG Error 35264: data movement suspended'),
+				(35265, 0, N'AOAG Error 35265: data movement resumed'),
+				(41404, 0, N'AOAG Error 41404: AG offline'),
+				(41405, 0, N'AOAG Error 41405: not ready for automatic failover');
+		END;
+	END;
+END;
+
+RAISERROR (N'done.', 10, 1) WITH NOWAIT;
+
 /*	2 - Create alerts.	*/
 
 RAISERROR (N'Creating alerts ...', 10, 2) WITH NOWAIT;
 
-IF EXISTS (
-	SELECT [name]
-	FROM [msdb].[dbo].[sysalerts]
-	WHERE [name] = N'Error 823: database integrity at risk'
-)
-EXEC [msdb].[dbo].[sp_delete_alert] @name = N'Error 823: database integrity at risk';
+DECLARE [alert_cur] CURSOR LOCAL FAST_FORWARD
+FOR SELECT [message_id], [severity], [alert_name] FROM @Alerts;
 
-EXEC [msdb].[dbo].[sp_add_alert]
-	@name = N'Error 823: database integrity at risk', 
-	@message_id = 823, 
-	@severity = 0, 
-	@enabled = 1, 
-	@delay_between_responses = 0, 
-	@include_event_description_in = 1;
+OPEN [alert_cur];
 
-IF EXISTS (
-	SELECT [name]
-	FROM [msdb].[dbo].[sysalerts]
-	WHERE [name] = N'Error 824: database integrity at risk'
-)
-EXEC [msdb].[dbo].[sp_delete_alert] @name = N'Error 824: database integrity at risk';
+FETCH NEXT FROM [alert_cur] INTO @currentAlertMessageId, @currentAlertSeverity, @currentAlertName;
 
-EXEC [msdb].[dbo].[sp_add_alert]
-	@name = N'Error 824: database integrity at risk', 
-	@message_id = 824, 
-	@severity = 0, 
-	@enabled = 1, 
-	@delay_between_responses = 0, 
-	@include_event_description_in = 1;
+WHILE @@FETCH_STATUS = 0
+BEGIN
+	RAISERROR (N'    Creating ''%s''', 10, 2, @currentAlertName) WITH NOWAIT;
 
-IF EXISTS (
-	SELECT [name]
-	FROM [msdb].[dbo].[sysalerts]
-	WHERE [name] = N'Error 825: database integrity at risk'
-)
-EXEC [msdb].[dbo].[sp_delete_alert] @name = N'Error 825: database integrity at risk';
+	IF EXISTS (
+		SELECT [name]
+		FROM [msdb].[dbo].[sysalerts]
+		WHERE [name] = @currentAlertName
+	)
+	EXEC [msdb].[dbo].[sp_delete_alert] @name = @currentAlertName;
 
-EXEC [msdb].[dbo].[sp_add_alert]
-	@name = N'Error 825: database integrity at risk', 
-	@message_id = 825, 
-	@severity = 0, 
-	@enabled = 1, 
-	@delay_between_responses = 0, 
-	@include_event_description_in = 1;
+	EXEC [msdb].[dbo].[sp_add_alert]
+		@name = @currentAlertName,
+		@message_id = @currentAlertMessageId,
+		@severity = @currentAlertSeverity,
+		@enabled = 1,
+		@delay_between_responses = 0,
+		@include_event_description_in = 1;
 
-IF EXISTS (
-	SELECT [name]
-	FROM [msdb].[dbo].[sysalerts]
-	WHERE [name] = N'Severity 17 - insufficient resources'
-)
-EXEC [msdb].[dbo].[sp_delete_alert] @name = N'Severity 17 - insufficient resources';
+	FETCH NEXT FROM [alert_cur] INTO @currentAlertMessageId, @currentAlertSeverity, @currentAlertName;
+END;
 
-EXEC [msdb].[dbo].[sp_add_alert]
-	@name = N'Severity 17 - insufficient resources', 
-	@message_id = 0, 
-	@severity = 17, 
-	@enabled = 1, 
-	@delay_between_responses = 0, 
-	@include_event_description_in = 1;
-
-IF EXISTS (
-	SELECT [name]
-	FROM [msdb].[dbo].[sysalerts]
-	WHERE [name] = N'Severity 18 - non-fatal internal error'
-)
-EXEC [msdb].[dbo].[sp_delete_alert] @name = N'Severity 18 - non-fatal internal error';
-
-EXEC [msdb].[dbo].[sp_add_alert]
-	@name = N'Severity 18 - non-fatal internal error', 
-	@message_id = 0, 
-	@severity = 18, 
-	@enabled = 1, 
-	@delay_between_responses = 0, 
-	@include_event_description_in = 1;
-
-IF EXISTS (
-	SELECT [name]
-	FROM [msdb].[dbo].[sysalerts]
-	WHERE [name] = N'Severity 19 - fatal resource error'
-)
-EXEC [msdb].[dbo].[sp_delete_alert] @name = N'Severity 19 - fatal resource error';
-
-EXEC [msdb].[dbo].[sp_add_alert]
-	@name = N'Severity 19 - fatal resource error', 
-	@message_id = 0, 
-	@severity = 19, 
-	@enabled = 1, 
-	@delay_between_responses = 0, 
-	@include_event_description_in = 1;
-
-IF EXISTS (
-	SELECT [name]
-	FROM [msdb].[dbo].[sysalerts]
-	WHERE [name] = N'Severity 20 - fatal error in the current process'
-)
-EXEC [msdb].[dbo].[sp_delete_alert] @name = N'Severity 20 - fatal error in the current process';
-
-EXEC [msdb].[dbo].[sp_add_alert]
-	@name = N'Severity 20 - fatal error in the current process', 
-	@message_id = 0, 
-	@severity = 20, 
-	@enabled = 1, 
-	@delay_between_responses = 0, 
-	@include_event_description_in = 1;
-
-IF EXISTS (
-	SELECT [name]
-	FROM [msdb].[dbo].[sysalerts]
-	WHERE [name] = N'Severity 21 - fatal error in database processes'
-)
-EXEC [msdb].[dbo].[sp_delete_alert] @name = N'Severity 21 - fatal error in database processes';
-
-EXEC [msdb].[dbo].[sp_add_alert]
-	@name = N'Severity 21 - fatal error in database processes', 
-	@message_id = 0, 
-	@severity = 21, 
-	@enabled = 1, 
-	@delay_between_responses = 0, 
-	@include_event_description_in = 1;
-
-IF EXISTS (
-	SELECT [name]
-	FROM [msdb].[dbo].[sysalerts]
-	WHERE [name] = N'Severity 22 - fatal error: table integrity at risk'
-)
-EXEC [msdb].[dbo].[sp_delete_alert] @name = N'Severity 22 - fatal error: table integrity at risk';
-
-EXEC [msdb].[dbo].[sp_add_alert]
-	@name = N'Severity 22 - fatal error: table integrity at risk', 
-	@message_id = 0, 
-	@severity = 22, 
-	@enabled = 1, 
-	@delay_between_responses = 0, 
-	@include_event_description_in = 1;
-
-IF EXISTS (
-	SELECT [name]
-	FROM [msdb].[dbo].[sysalerts]
-	WHERE [name] = N'Severity 23 - fatal error: database integrity at risk'
-)
-EXEC [msdb].[dbo].[sp_delete_alert] @name = N'Severity 23 - fatal error: database integrity at risk';
-
-EXEC [msdb].[dbo].[sp_add_alert]
-	@name = N'Severity 23 - fatal error: database integrity at risk', 
-	@message_id = 0, 
-	@severity = 23, 
-	@enabled = 1, 
-	@delay_between_responses = 0, 
-	@include_event_description_in = 1;
-
-IF EXISTS (
-	SELECT [name]
-	FROM [msdb].[dbo].[sysalerts]
-	WHERE [name] = N'Severity 24 - fatal error: hardware error'
-)
-EXEC [msdb].[dbo].[sp_delete_alert] @name = N'Severity 24 - fatal error: hardware error';
-
-EXEC [msdb].[dbo].[sp_add_alert]
-	@name = N'Severity 24 - fatal error: hardware error', 
-	@message_id = 0, 
-	@severity = 24, 
-	@enabled = 1, 
-	@delay_between_responses = 0, 
-	@include_event_description_in = 1;
-
-IF EXISTS (
-	SELECT [name]
-	FROM [msdb].[dbo].[sysalerts]
-	WHERE [name] = N'Severity 25 - fatal error: system error'
-)
-EXEC [msdb].[dbo].[sp_delete_alert] @name = N'Severity 25 - fatal error: system error';
-
-EXEC [msdb].[dbo].[sp_add_alert]
-	@name = N'Severity 25 - fatal error: system error', 
-	@message_id = 0, 
-	@severity = 25, 
-	@enabled = 1, 
-	@delay_between_responses = 0, 
-	@include_event_description_in = 1;
+CLOSE  [alert_cur];
+DEALLOCATE [alert_cur];
 
 RAISERROR (N'done.', 10, 2) WITH NOWAIT;
 
@@ -309,69 +232,34 @@ RAISERROR (N'done.', 10, 3) WITH NOWAIT;
 
 RAISERROR (N'Configure alert notifications ...', 10, 4) WITH NOWAIT;
 
-EXEC [msdb].[dbo].[sp_add_notification]
-	@alert_name = N'Error 823: database integrity at risk',
-	@operator_name = @OperatorName,
-	@notification_method = 1;
+DECLARE [alert_cur] CURSOR LOCAL FAST_FORWARD
+FOR SELECT [alert_name] FROM @Alerts;
 
-EXEC [msdb].[dbo].[sp_add_notification]
-	@alert_name = N'Error 824: database integrity at risk',
-	@operator_name = @OperatorName,
-	@notification_method = 1;
+OPEN [alert_cur];
 
-EXEC [msdb].[dbo].[sp_add_notification]
-	@alert_name = N'Error 825: database integrity at risk',
-	@operator_name = @OperatorName,
-	@notification_method = 1;
+FETCH NEXT FROM [alert_cur] INTO @currentAlertName;
 
-EXEC [msdb].[dbo].[sp_add_notification]
-	@alert_name = N'Severity 17 - insufficient resources',
-	@operator_name = @OperatorName,
-	@notification_method = 1;
+WHILE @@FETCH_STATUS = 0
+BEGIN
+	RAISERROR (N'    processing ''%s''', 10, 2, @currentAlertName) WITH NOWAIT;
 
-EXEC [msdb].[dbo].[sp_add_notification]
-	@alert_name = N'Severity 18 - non-fatal internal error',
-	@operator_name = @OperatorName,
-	@notification_method = 1;
+	EXEC [msdb].[dbo].[sp_add_notification]
+		@alert_name = @currentAlertName,
+		@operator_name = @OperatorName,
+		@notification_method = 1;
 
-EXEC [msdb].[dbo].[sp_add_notification]
-	@alert_name = N'Severity 19 - fatal resource error',
-	@operator_name = @OperatorName,
-	@notification_method = 1;
+	FETCH NEXT FROM [alert_cur] INTO @currentAlertName;
+END;
 
-EXEC [msdb].[dbo].[sp_add_notification]
-	@alert_name = N'Severity 20 - fatal error in the current process',
-	@operator_name = @OperatorName,
-	@notification_method = 1;
-
-EXEC [msdb].[dbo].[sp_add_notification]
-	@alert_name = N'Severity 21 - fatal error in database processes',
-	@operator_name = @OperatorName,
-	@notification_method = 1;
-
-EXEC [msdb].[dbo].[sp_add_notification]
-	@alert_name = N'Severity 22 - fatal error: table integrity at risk',
-	@operator_name = @OperatorName,
-	@notification_method = 1;
-
-EXEC [msdb].[dbo].[sp_add_notification]
-	@alert_name = N'Severity 23 - fatal error: database integrity at risk',
-	@operator_name = @OperatorName,
-	@notification_method = 1;
-
-EXEC [msdb].[dbo].[sp_add_notification]
-	@alert_name = N'Severity 24 - fatal error: hardware error',
-	@operator_name = @OperatorName,
-	@notification_method = 1;
-
-EXEC [msdb].[dbo].[sp_add_notification]
-	@alert_name = N'Severity 25 - fatal error: system error',
-	@operator_name = @OperatorName,
-	@notification_method = 1;
+CLOSE  [alert_cur];
+DEALLOCATE [alert_cur];
 
 RAISERROR (N'done.', 10, 4) WITH NOWAIT;
 
 /*	5 - Final setting (replace runtime tokens).	*/
 
+RAISERROR (N'Enable ''Replace tokens for all job responses to alerts'' option ...', 10, 5) WITH NOWAIT;
+
 EXEC [msdb].[dbo].[sp_set_sqlagent_properties] @alert_replace_runtime_tokens = 1;
 
+RAISERROR (N'done.', 10, 5) WITH NOWAIT;
