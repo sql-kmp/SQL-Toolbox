@@ -6,6 +6,8 @@ Simply awesome and strongly recommended:
 - [SQL Server Maintenance Solution](https://ola.hallengren.com/) by Ola Hallengren
 - [sp_whoisactive](http://whoisactive.com/) by Adam Machanic
 - [SQL Server Diagnostic Queries](https://glennsqlperformance.com/resources/) by Glenn Alan Berry
+- [Microsoft SQL Server Versions List](https://sqlserverbuilds.blogspot.com/) - Not a tool by definition, but a very useful overview of all SQL Server versions incl. patches (SP, CU, Hot Fixes)
+- [SolarWinds Plan Explorer](https://www.sentryone.com/plan-explorer)
 
 Interesting, but currently not completely tested and evaluated, simply because the day has only 24 hours:
 
