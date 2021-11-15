@@ -1,6 +1,3 @@
-USE [master];
-GO
-
 /*
 	setup_alerts_and_operator.sql
 
@@ -19,13 +16,13 @@ GO
 	Changelog
 	---------
 
+	2021-11-15	KMP	Pre-check if an alert already exists for the specified message_id or severity.
 	2021-11-14	KMP	AOAG related alerts added, switched to CURSOR-based processing.
 	2021-11-13	KMP	Initial release.
 
 	Known Issues
 	------------
 
-	- The script does not check in advance if identical warnings have already been created, just with a different name.
 	- It is not checked whether the operator is assigned to job agents.
 	- Only 1 operator can be created.
 	- The created operator automatically becomes the failsafe operator.
@@ -55,6 +52,9 @@ GO
 	SOFTWARE.
 
 */
+
+USE [msdb];
+GO
 
 DECLARE @OperatorName NVARCHAR(128) = NULL;
 DECLARE @OperatorEMail NVARCHAR(128) = NULL;
@@ -163,22 +163,43 @@ FETCH NEXT FROM [alert_cur] INTO @currentAlertMessageId, @currentAlertSeverity, 
 
 WHILE @@FETCH_STATUS = 0
 BEGIN
-	RAISERROR (N'    Creating ''%s''', 10, 2, @currentAlertName) WITH NOWAIT;
+	DECLARE @existingAlertName NVARCHAR(128) = NULL;
 
-	IF EXISTS (
-		SELECT [name]
-		FROM [msdb].[dbo].[sysalerts]
-		WHERE [name] = @currentAlertName
-	)
-	EXEC [msdb].[dbo].[sp_delete_alert] @name = @currentAlertName;
+	SELECT @existingAlertName = [name]
+	FROM [msdb].[dbo].[sysalerts]
+	WHERE [message_id] = @currentAlertMessageId
+		AND [severity] = @currentAlertSeverity
+	OPTION (RECOMPILE);
 
-	EXEC [msdb].[dbo].[sp_add_alert]
-		@name = @currentAlertName,
-		@message_id = @currentAlertMessageId,
-		@severity = @currentAlertSeverity,
-		@enabled = 1,
-		@delay_between_responses = 0,
-		@include_event_description_in = 1;
+	IF (@existingAlertName IS NOT NULL)
+	BEGIN
+		RAISERROR (N'    Alert for message_id %d, severity %d already exists. Skip creation of ''%s''.', 10, 2, @currentAlertMessageId, @currentAlertSeverity, @currentAlertName) WITH NOWAIT;
+		
+		-- update table variable so that the recipient of the alert notification can be set correctly in step 4:
+		UPDATE @Alerts
+		SET [alert_name] = @existingAlertName
+		WHERE [message_id] = @currentAlertMessageId
+			AND [severity] = @currentAlertSeverity;
+	END
+	ELSE
+	BEGIN
+		IF EXISTS (
+			SELECT [name]
+			FROM [msdb].[dbo].[sysalerts]
+			WHERE [name] = @currentAlertName
+		)
+		EXEC [msdb].[dbo].[sp_delete_alert] @name = @currentAlertName;
+
+		EXEC [msdb].[dbo].[sp_add_alert]
+			@name = @currentAlertName,
+			@message_id = @currentAlertMessageId,
+			@severity = @currentAlertSeverity,
+			@enabled = 1,
+			@delay_between_responses = 0,
+			@include_event_description_in = 1;
+
+		RAISERROR (N'    Alert ''%s'' for message_id %d, severity %d created.', 10, 2, @currentAlertName, @currentAlertMessageId, @currentAlertSeverity) WITH NOWAIT;
+	END;
 
 	FETCH NEXT FROM [alert_cur] INTO @currentAlertMessageId, @currentAlertSeverity, @currentAlertName;
 END;
