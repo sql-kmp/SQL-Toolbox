@@ -52,7 +52,7 @@ Starting point should be a fully patched operating system. Ideally, the operatin
 
   | Files                             | recommended cluster size                                     |
   | --------------------------------- | ------------------------------------------------------------ |
-  | Binaries (C:)[^3]                 | n/a (4k = default cluster size)                              |
+  | Binaries (C:)[^3]                 | 4k = default cluster size (informational)                    |
   | data files (user databases)       | 64k, 1MB respectively                                        |
   | database log files (incl. tempdb) | 8k, 64k respectively                                         |
   | data files (tempdb)               | 64k, 1MB respectively (on dedicated fast storage)            |
