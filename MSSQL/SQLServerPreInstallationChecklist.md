@@ -14,7 +14,7 @@ Configuration of a VM is out of scope here. You can find a good summary here: [V
 
 Starting point should be a fully patched operating system. Ideally, the operating system should be installed in English.
 
-⚠ The hardware clock should be set to **UTC**. If you do not agree, please read this: [The Worst Server Setup Mistake You Can Make](http://yellerapp.com/posts/2015-01-12-the-worst-server-setup-you-can-make.html)
+⚠ The hardware clock should always be set to **UTC**. Period! If you do not agree, please read this: [The Worst Server Setup Mistake You Can Make](http://yellerapp.com/posts/2015-01-12-the-worst-server-setup-you-can-make.html)
 
 - [ ] OS's power plan setting:
 
@@ -60,7 +60,7 @@ Starting point should be a fully patched operating system. Ideally, the operatin
   | (error) log files[^4]             | 4k = default cluster size                                    |
   | instance root w/ system databases | 4k should be ok, usually error log and trace files are stored in this directory structure |
 
-  [^3]:at least 128 GB of space nowadays
+  [^3]:at least 128 GB of space nowadays (i.e. 2021 currently)
   [^4]:Sometimes it's a good idea to store the error log and trace files on a separate volume.
 
 - [ ] disable compression:
