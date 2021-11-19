@@ -10,7 +10,12 @@ If you have made (negative or different) experiences related to individual items
 
 Having this said, let's start with the list.
 
-Configuration of a VM is out of scope here. You can find a good summary here: [VMware and SQL Server Best Practices](https://straightpathsql.com/archives/2020/12/vmware-and-sql-server-best-practices/)
+Configuration of a VM is out of scope here. You can find more information here:
+- [Tips for configuring Microsoft SQL Server in a virtual machine (1002951)](https://kb.vmware.com/s/article/1002951)
+- [ARCHITECTING MICROSOFT SQL SERVER ON VMWARE VSPHERE® - Best Practices Guide](https://www.vmware.com/content/dam/digitalmarketing/vmware/en/pdf/solutions/sql-server-on-vmware-best-practices-guide.pdf)
+- [Successfully Virtualizing Microsoft SQL Server for High Availability on Azure VMware Solutions - BEST PRACTICES GUIDE](https://www.vmware.com/content/dam/digitalmarketing/vmware/en/pdf/docs/vmw-ms-sql-server-workloads-on-avs.pdf)
+- [Best Practices for SQL Server on VMware - Distilled](https://www.nocentino.com/posts/2021-09-27-sqlserver-vms-best-practices/)
+- [VMware and SQL Server Best Practices](https://straightpathsql.com/archives/2020/12/vmware-and-sql-server-best-practices/)
 
 Starting point should be a fully patched operating system. Ideally, the operating system should be installed in English.
 
