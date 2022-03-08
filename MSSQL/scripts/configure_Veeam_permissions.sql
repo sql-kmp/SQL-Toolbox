@@ -1,7 +1,8 @@
 /*
 	configure_Veeam_permissions.sql
 
-	This script configures Veeam Backup & Replication permissions acc. to
+	This script configures the (minimum required) permissions of Veeam Backup & Replication
+	according to the official documentation:
 	https://helpcenter.veeam.com/docs/backup/vsphere/required_permissions.html?ver=110#vesql.
 	
 	First, specify the name of the Veeam service account (@VeeamServiceAccount). If this parameter
@@ -21,7 +22,9 @@
 	Known Issues
 	------------
 
-	- The script does not check if the given login owns the database.
+	- The script does not check if the given login owns a database.
+	- No database exclusions, except tempdb (hard-coded).
+	- Tested with SQL Server 2016, and 2019, only.
 
 	The MIT License
 	---------------
