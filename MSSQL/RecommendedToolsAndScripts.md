@@ -1,5 +1,11 @@
 # Recommended Tools and Scripts
 
+SQL Server specific online tools that might come at handy:
+
+- Are columnstore indexes an option?: [ColumnScore](https://columnscore.com/)
+- Share execution plans: [Paste The Plan](https://www.brentozar.com/pastetheplan/)
+- Parse SQL Server IO, and time statistics: [Statistics Parser](https://statisticsparser.com/)
+
 Simply awesome and strongly recommended:
 
 - [First Responder Kit](https://www.brentozar.com/first-aid/) by Brent Ozar
@@ -18,4 +24,3 @@ Interesting, but currently not completely tested and evaluated, simply because t
 - [MinionWare](https://www.minionware.net/) - I've just heard but not investigated further yet.
 
 The lists are by no means complete and will be updated over time.
-
