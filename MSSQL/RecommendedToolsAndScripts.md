@@ -19,6 +19,7 @@ Interesting, but currently not completely tested and evaluated, simply because t
 
 - [dbatools](https://dbatools.io/) by a whole, awesome team
 - [Darling Data: SQL Server Troubleshooting Scripts](https://github.com/erikdarlingdata/DarlingData) by [Erik Darling](https://www.erikdarlingdata.com/)
+- [sp_QuickieStore](https://www.erikdarlingdata.com/sp_quickiestore/) by [Erik Darling](https://www.erikdarlingdata.com/)
 - [sqlserver_indexanalysis](https://github.com/StrateSQL/sqlserver_indexanalysis) by [Jason Strate](https://jasonstrate.com/)
 - [SQL Server Toolbox](https://github.com/SparkhoundSQL/sql-server-toolbox) by [William Assaf](https://www.sqltact.com/)
 - [MinionWare](https://www.minionware.net/) - I've just heard but not investigated further yet.
