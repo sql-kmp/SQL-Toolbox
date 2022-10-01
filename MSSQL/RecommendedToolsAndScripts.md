@@ -5,6 +5,7 @@ SQL Server specific online tools that might come at handy:
 - Are columnstore indexes an option?: [ColumnScore](https://columnscore.com/)
 - Share execution plans: [Paste The Plan](https://www.brentozar.com/pastetheplan/)
 - Parse SQL Server IO, and time statistics: [Statistics Parser](https://statisticsparser.com/)
+- Make queries look pretty (frankly, not only for SQL Server): [Formatting your code](format-sql.com)
 
 Simply awesome and strongly recommended:
 
