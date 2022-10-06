@@ -16,6 +16,7 @@
 	Changelog
 	---------
 
+	2022-10-06	KMP	Slert for error 17810 added (dedicated admin connection already exists)
 	2021-11-15	KMP	Pre-check if an alert already exists for the specified message_id or severity.
 	2021-11-14	KMP	AOAG related alerts added, switched to CURSOR-based processing.
 	2021-11-13	KMP	Initial release.
@@ -77,6 +78,7 @@ VALUES
 	(823, 0, N'Error 823: database integrity at risk'),
 	(824, 0, N'Error 824: database integrity at risk'),
 	(825, 0, N'Error 825: database integrity at risk'),
+	(17810, 0, N'Error 17810: dedicated administrator connection already exists'),
 	(0, 17, N'Severity 17 - insufficient resources'),
 	(0, 18, N'Severity 18 - non-fatal internal error'),
 	(0, 19, N'Severity 19 - fatal resource error'),
@@ -97,9 +99,9 @@ RAISERROR (N'Checking SQL Server Agent service ...', 10, 1) WITH NOWAIT;
 
 IF NOT EXISTS (
 	SELECT 1
-	FROM [master].[sys].[dm_server_services] WITH (NOLOCK)
-	WHERE [servicename] LIKE 'SQL Server Agent%'
-		AND [status] = 4	-- Running
+		FROM [master].[sys].[dm_server_services] WITH (NOLOCK)
+		WHERE [servicename] LIKE 'SQL Server Agent%'
+			AND [status] = 4	-- Running
 )
 BEGIN
 	RAISERROR (N'SQL Server Agent service is not running. Abort execution ...', 16, 1) WITH NOWAIT;
@@ -118,7 +120,7 @@ IF (@AddAOAGAlerts = 1)
 BEGIN
 	IF (CONVERT(INT, PARSENAME(CONVERT(NVARCHAR(128), SERVERPROPERTY('ProductVersion')), 4)) < 11)
 	BEGIN
-		-- SQL Server 2012 and above only!
+		/* SQL Server 2012 and above only! */
 		SET @AddAOAGAlerts = 0;
 		RAISERROR (N'AlwaysOn is not implemented in this version of SQL Server. Parameter @AddAOAGAlerts has been reset.', 10, 1) WITH NOWAIT;
 	END
@@ -126,7 +128,7 @@ BEGIN
 	BEGIN
 		IF CONVERT(BIT, COALESCE(SERVERPROPERTY('IsHadrEnabled'), 0)) = 0
 		BEGIN
-			-- HADR is disabled
+			/* HADR is disabled */
 			SET @AddAOAGAlerts = 0;
 			RAISERROR (N'AlwaysOn is disabled on instance level. Parameter @AddAOAGAlerts has been reset.', 10, 1) WITH NOWAIT;
 		END
@@ -155,38 +157,39 @@ RAISERROR (N'done.', 10, 1) WITH NOWAIT;
 RAISERROR (N'Creating alerts ...', 10, 2) WITH NOWAIT;
 
 DECLARE [alert_cur] CURSOR LOCAL FAST_FORWARD
-FOR SELECT [message_id], [severity], [alert_name] FROM @Alerts;
+	FOR SELECT [message_id], [severity], [alert_name] FROM @Alerts;
 
 OPEN [alert_cur];
 
-FETCH NEXT FROM [alert_cur] INTO @currentAlertMessageId, @currentAlertSeverity, @currentAlertName;
+FETCH NEXT FROM [alert_cur]
+	INTO @currentAlertMessageId, @currentAlertSeverity, @currentAlertName;
 
 WHILE @@FETCH_STATUS = 0
 BEGIN
 	DECLARE @existingAlertName NVARCHAR(128) = NULL;
 
 	SELECT @existingAlertName = [name]
-	FROM [msdb].[dbo].[sysalerts]
-	WHERE [message_id] = @currentAlertMessageId
-		AND [severity] = @currentAlertSeverity
-	OPTION (RECOMPILE);
+		FROM [msdb].[dbo].[sysalerts]
+		WHERE [message_id] = @currentAlertMessageId
+			AND [severity] = @currentAlertSeverity
+		OPTION (RECOMPILE);
 
 	IF (@existingAlertName IS NOT NULL)
 	BEGIN
 		RAISERROR (N'    Alert for message_id %d, severity %d already exists. Skip creation of ''%s''.', 10, 2, @currentAlertMessageId, @currentAlertSeverity, @currentAlertName) WITH NOWAIT;
 		
-		-- update table variable so that the recipient of the alert notification can be set correctly in step 4:
+		/* update table variable so that the recipient of the alert notification can be set correctly in step 4: */
 		UPDATE @Alerts
-		SET [alert_name] = @existingAlertName
-		WHERE [message_id] = @currentAlertMessageId
-			AND [severity] = @currentAlertSeverity;
+			SET [alert_name] = @existingAlertName
+			WHERE [message_id] = @currentAlertMessageId
+				AND [severity] = @currentAlertSeverity;
 	END
 	ELSE
 	BEGIN
 		IF EXISTS (
 			SELECT [name]
-			FROM [msdb].[dbo].[sysalerts]
-			WHERE [name] = @currentAlertName
+				FROM [msdb].[dbo].[sysalerts]
+				WHERE [name] = @currentAlertName
 		)
 		EXEC [msdb].[dbo].[sp_delete_alert] @name = @currentAlertName;
 
@@ -201,10 +204,11 @@ BEGIN
 		RAISERROR (N'    Alert ''%s'' for message_id %d, severity %d created.', 10, 2, @currentAlertName, @currentAlertMessageId, @currentAlertSeverity) WITH NOWAIT;
 	END;
 
-	FETCH NEXT FROM [alert_cur] INTO @currentAlertMessageId, @currentAlertSeverity, @currentAlertName;
+	FETCH NEXT FROM [alert_cur]
+		INTO @currentAlertMessageId, @currentAlertSeverity, @currentAlertName;
 END;
 
-CLOSE  [alert_cur];
+CLOSE [alert_cur];
 DEALLOCATE [alert_cur];
 
 RAISERROR (N'done.', 10, 2) WITH NOWAIT;
@@ -229,8 +233,8 @@ RAISERROR (N'Create operator ...', 10, 3) WITH NOWAIT;
 
 IF  EXISTS (
 	SELECT 1
-	FROM [msdb].[dbo].[sysoperators]
-	WHERE [name] = @OperatorName
+		FROM [msdb].[dbo].[sysoperators]
+		WHERE [name] = @OperatorName
 )
 EXEC [msdb].[dbo].[sp_delete_operator] @name = @OperatorName;
 
@@ -258,7 +262,8 @@ FOR SELECT [alert_name] FROM @Alerts;
 
 OPEN [alert_cur];
 
-FETCH NEXT FROM [alert_cur] INTO @currentAlertName;
+FETCH NEXT FROM [alert_cur]
+	INTO @currentAlertName;
 
 WHILE @@FETCH_STATUS = 0
 BEGIN
@@ -269,7 +274,8 @@ BEGIN
 		@operator_name = @OperatorName,
 		@notification_method = 1;
 
-	FETCH NEXT FROM [alert_cur] INTO @currentAlertName;
+	FETCH NEXT FROM [alert_cur]
+		INTO @currentAlertName;
 END;
 
 CLOSE  [alert_cur];
