@@ -27,7 +27,13 @@ Starting point should be a fully patched operating system. Ideally, the operatin
   POWERCFG /GETACTIVESCHEME
   ```
 
-  You want to see *"High performance"* in the result. Don't forget to check BIOS' power plan settings.
+  You want to see *"High performance"* in the result. If this is not the case:
+
+  ```
+  POWERCFG /SETACTIVE 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c
+  ```
+
+  Don't forget to check BIOS' power plan settings.
 
 - [ ] Port shares (see also [Configure the Windows Firewall to Allow SQL Server Access](https://docs.microsoft.com/en-us/sql/sql-server/install/configure-the-windows-firewall-to-allow-sql-server-access)):
 
@@ -60,10 +66,11 @@ Starting point should be a fully patched operating system. Ideally, the operatin
   | Binaries (C:)[^3]                 | 4k = default cluster size (informational)                    |
   | data files (user databases)       | 64k, 1MB respectively                                        |
   | database log files (incl. tempdb) | 8k, 64k respectively                                         |
-  | data files (tempdb)               | 64k, 1MB respectively (on dedicated fast storage)            |
+  | data files (tempdb)               | 64k, 1MB respectively / on dedicated fast storage            |
   | backups                           | 64k, 1MB respectively                                        |
   | (error) log files[^4]             | 4k = default cluster size                                    |
   | instance root w/ system databases | 4k should be ok, usually error log and trace files are stored in this directory structure |
+  | FILESTREAM data                   | 64k, 1MB respectively                                        |
 
   [^3]:at least 128 GB of space nowadays (i.e. 2021 currently)
   [^4]:Sometimes it's a good idea to store the error log and trace files on a separate volume.
@@ -100,7 +107,7 @@ Starting point should be a fully patched operating system. Ideally, the operatin
   - [ ] KDS Rootkey (domain admin privileges required):
 
     ```powershell
-    # check whether there is already one:
+    # check whether there is already one (no output, if you don't have sufficient permissions!):
     Get-KdsRootKey
     # if not:
     Add-KdsRootKey -EffectiveImmediately
@@ -122,7 +129,6 @@ Starting point should be a fully patched operating system. Ideally, the operatin
 
     ⚠The gMSA does not need to be a local administrator. Setup will automatically grant least privileges required.
 
-- [ ] Design backup strategy related to RPO and RTO.
+- [ ] Design backup strategy and HA/DR related to RPO and RTO.
 
 - [ ] Finally, have the correct installation media (version, edition) and patches at hand. The English version is very much appreciated by me 😉.
-
