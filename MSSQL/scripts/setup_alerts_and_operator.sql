@@ -16,7 +16,8 @@
 	Changelog
 	---------
 
-	2022-10-06	KMP	Slert for error 17810 added (dedicated admin connection already exists)
+	2023-01-17	KMP	Name pattern for SQL Server agent service name changed to consider other installation languages (issue #2).
+	2022-10-06	KMP	Alert for error 17810 added (dedicated admin connection already exists).
 	2021-11-15	KMP	Pre-check if an alert already exists for the specified message_id or severity.
 	2021-11-14	KMP	AOAG related alerts added, switched to CURSOR-based processing.
 	2021-11-13	KMP	Initial release.
@@ -100,7 +101,7 @@ RAISERROR (N'Checking SQL Server Agent service ...', 10, 1) WITH NOWAIT;
 IF NOT EXISTS (
 	SELECT 1
 		FROM [master].[sys].[dm_server_services] WITH (NOLOCK)
-		WHERE [servicename] LIKE 'SQL Server Agent%'
+		WHERE [servicename] LIKE 'SQL Server%Agent%'
 			AND [status] = 4	-- Running
 )
 BEGIN
