@@ -6,34 +6,45 @@
 
 	Parameter(s) to be set in advance:
 
-		@OperatorName	-	A name/designation for the operator which will be configured. Notification configuration will be skipped if NULL.
-		@OperatorEMail	-	A semicolon-separated list of email addresses. Notification configuration will be skipped if NULL.
-		@AddAOAGAlerts	-	Defines whether alerts related to AlwaysOn availability groups should be created. Default value is 0.
-							If SERVERPROPERTY('IsHadrEnabled') equals 0 or is NULL, creation of these warning messages is skipped.
+		@OperatorName			-	A name/designation for the operator which will be configured.
+									/!\ If the operator already exists, it will be re-created with @OperatorEMail as new email address.
+									Configuration of notifications as well as the operator will be skipped if NULL (alerts will be created!).
+		@OperatorEMail			-	A semicolon-separated list of email addresses.
+									Configuration of notifications as well as the operator will be skipped if NULL (alerts will be created!).
+		@AddAOAGAlerts			-	Defines whether alerts related to AlwaysOn availability groups should be created. Default value is 1.
+									If SERVERPROPERTY('IsHadrEnabled') equals 0 or is NULL, creation of these warning messages is skipped.
+		@SetAsFailSafeOperator	-	Defines whether @OperatorName should become the fail-safe operator. Default value is 1.
+									If @OperatorName is already set as fail-safe operator nothing will be changed here.
 
 	If any of the parameters is NULL, the configuration of notifications as well as of the failsafe operator will be skipped.
 
 	Changelog
 	---------
 
+	2023-01-19	KMP	Configuration as fail-safe operator controllable via parameters.
+					Clarifications in comments and descriptions.
 	2023-01-17	KMP	Name pattern for SQL Server agent service name changed to consider other installation languages (issue #2).
 	2022-10-06	KMP	Alert for error 17810 added (dedicated admin connection already exists).
 	2021-11-15	KMP	Pre-check if an alert already exists for the specified message_id or severity.
 	2021-11-14	KMP	AOAG related alerts added, switched to CURSOR-based processing.
 	2021-11-13	KMP	Initial release.
 
+	Limitations
+	-----------
+
+	- Only 1 operator can be created.
+	- Notifications related to job agents are not subject of this script.
+	- DBMail configuration is not considered.  
+
 	Known Issues
 	------------
 
-	- It is not checked whether the operator is assigned to job agents.
-	- Only 1 operator can be created.
-	- The created operator automatically becomes the failsafe operator.
-	- Nothing included yet related to DBMail.
+	None.
 
 	The MIT License
 	---------------
 
-	Copyright (c) 2021-2022 Kai-Micael Preiﬂ.
+	Copyright (c) 2021-2023 Kai-Micael Preiﬂ.
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy
 	of this software and associated documentation files (the "Software"), to deal
@@ -54,13 +65,13 @@
 	SOFTWARE.
 
 */
-
 USE [msdb];
 GO
 
 DECLARE @OperatorName NVARCHAR(128) = NULL;
 DECLARE @OperatorEMail NVARCHAR(128) = NULL;
 DECLARE @AddAOAGAlerts BIT = 1;
+DECLARE @SetAsFailSafeOperator BIT = 1;
 
 /*	*********************************************************************************
 	*                    DO NOT CHANGE ANYTHING AFTER THIS LINE!                    *
@@ -222,15 +233,35 @@ BEGIN
 	RETURN;
 END;
 
-RAISERROR (N'Unset failsafe operator, if already set ...', 10, 3) WITH NOWAIT;
+SET @SetAsFailSafeOperator = COALESCE(@SetAsFailSafeOperator, 0);
 
-EXEC [master].[dbo].[sp_MSsetalertinfo]
-	@failsafeoperator = N'',
-	@notificationmethod = 0;
+DECLARE @currentFailSafeOperator NVARCHAR(128);
 
-RAISERROR (N'done.', 10, 3) WITH NOWAIT;
+EXEC [sys].[xp_instance_regread]
+	N'HKEY_LOCAL_MACHINE',
+	N'SOFTWARE\Microsoft\MSSQLServer\SQLServerAgent',
+	N'AlertFailSafeOperator',
+	@param = @currentFailSafeOperator OUT,
+	@no_output = N'no_output';
 
-RAISERROR (N'Create operator ...', 10, 3) WITH NOWAIT;
+SELECT @SetAsFailSafeOperator = CASE
+									WHEN @SetAsFailSafeOperator = 1 THEN 1
+									WHEN @OperatorName = @currentFailSafeOperator THEN 1
+									ELSE 0
+								END;
+
+IF ( @OperatorName = @currentFailSafeOperator )
+BEGIN
+	RAISERROR (N'%s is already set as failsafe operator. Will unset it temporarily...', 10, 3, @OperatorName) WITH NOWAIT;
+
+	EXEC [master].[dbo].[sp_MSsetalertinfo]
+		@failsafeoperator = N'',
+		@notificationmethod = 0;
+	
+	RAISERROR (N'done.', 10, 3) WITH NOWAIT;
+END;
+
+RAISERROR (N'(Re-)Create operator ...', 10, 3) WITH NOWAIT;
 
 IF  EXISTS (
 	SELECT 1
@@ -246,13 +277,16 @@ EXEC [msdb].[dbo].[sp_add_operator]
 
 RAISERROR (N'done.', 10, 3) WITH NOWAIT;
 
-RAISERROR (N'Set failsafe operator ...', 10, 3) WITH NOWAIT;
+IF ( @SetAsFailSafeOperator = 1 )
+BEGIN
+	RAISERROR (N'Set failsafe operator ...', 10, 3) WITH NOWAIT;
 
-EXEC [master].[dbo].[sp_MSsetalertinfo]
-	@failsafeoperator = @OperatorName,
-	@notificationmethod = 1;
+	EXEC [master].[dbo].[sp_MSsetalertinfo]
+		@failsafeoperator = @OperatorName,
+		@notificationmethod = 1;
 
-RAISERROR (N'done.', 10, 3) WITH NOWAIT;
+	RAISERROR (N'done.', 10, 3) WITH NOWAIT;
+END;
 
 /*	4 - Configure alert notifications.	*/
 
