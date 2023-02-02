@@ -6,11 +6,12 @@
 
     Parameter(s) to set or changes to make in advance:
 
-        user database name (USE [?];)
+        None.
 
     Changelog
     ---------
     
+    2023-02-02  KMP check each database (using sp_MSforeachdb), fully qualified object names
     2023-01-18  KMP Initial release.
     
     Known Issues
@@ -42,31 +43,31 @@
     SOFTWARE.
 */
 
+EXEC sp_MSforeachdb N'
 USE [?];
-GO
 
 SET NOCOUNT ON;
-GO
 
-SELECT QUOTENAME([s].[name]) + N'.' + QUOTENAME([o].[name]) + N'.' + QUOTENAME([fk].[name]) AS [untrusted_foreign_key],
-		N'ALTER TABLE ' + QUOTENAME([s].[name]) + N'.' + QUOTENAME([o].[name])
-			+ N' WITH CHECK CHECK CONSTRAINT ' + QUOTENAME([fk].[name]) + N';' AS [fix]
-	FROM [sys].[foreign_keys] AS [fk]
-		INNER JOIN [sys].[objects] AS [o] ON [fk].[parent_object_id] = [o].[object_id]
-		INNER JOIN [sys].[schemas] AS [s] ON [o].[schema_id] = [s].[schema_id]
-	WHERE [fk].[is_not_trusted] = 1
-		AND [fk].[is_not_for_replication] = 0		/* exclude keys that are relevant for replication! */
-	OPTION (RECOMPILE);
-GO
+SELECT DB_NAME() [database],
+        QUOTENAME([s].[name]) + N''.'' + QUOTENAME([o].[name]) + N''.'' + QUOTENAME([fk].[name]) AS [untrusted_foreign_key],
+        N''ALTER TABLE '' + QUOTENAME(DB_NAME()) + N''.'' + QUOTENAME([s].[name]) + N''.'' + QUOTENAME([o].[name])
+            + N'' WITH CHECK CHECK CONSTRAINT '' + QUOTENAME([fk].[name]) + N'';'' AS [fix]
+    FROM [sys].[foreign_keys] AS [fk]
+        INNER JOIN [sys].[objects] AS [o] ON [fk].[parent_object_id] = [o].[object_id]
+        INNER JOIN [sys].[schemas] AS [s] ON [o].[schema_id] = [s].[schema_id]
+    WHERE [fk].[is_not_trusted] = 1
+        AND [fk].[is_not_for_replication] = 0        /* exclude keys that are relevant for replication! */
+    OPTION (RECOMPILE);
  
-SELECT QUOTENAME([s].[name]) + N'.' + QUOTENAME([o].[name]) + N'.' + QUOTENAME([cc].[name]) AS [untrusted_check_constraint],
-		N'ALTER TABLE ' + QUOTENAME([s].[name]) + N'.' + QUOTENAME([o].[name])
-			+ N' WITH CHECK CHECK CONSTRAINT ' + QUOTENAME([cc].[name]) + N';' AS [fix]
-	FROM [sys].[check_constraints] AS [cc]
-		INNER JOIN [sys].[objects] [o] ON [cc].[parent_object_id] = [o].[object_id]
-		INNER JOIN [sys].[schemas] [s] ON [o].[schema_id] = [s].[schema_id]
-	WHERE [cc].[is_not_trusted] = 1
-		AND [cc].[is_not_for_replication] = 0		/* exclude keys that are relevant for replication! */
-		AND [cc].[is_disabled] = 0
-	OPTION (RECOMPILE);
-GO
+SELECT DB_NAME() [database],
+        QUOTENAME([s].[name]) + N''.'' + QUOTENAME([o].[name]) + N''.'' + QUOTENAME([cc].[name]) AS [untrusted_check_constraint],
+        N''ALTER TABLE '' + QUOTENAME(DB_NAME()) + N''.'' + QUOTENAME([s].[name]) + N''.'' + QUOTENAME([o].[name])
+            + N'' WITH CHECK CHECK CONSTRAINT '' + QUOTENAME([cc].[name]) + N'';'' AS [fix]
+    FROM [sys].[check_constraints] AS [cc]
+        INNER JOIN [sys].[objects] [o] ON [cc].[parent_object_id] = [o].[object_id]
+        INNER JOIN [sys].[schemas] [s] ON [o].[schema_id] = [s].[schema_id]
+    WHERE [cc].[is_not_trusted] = 1
+        AND [cc].[is_not_for_replication] = 0        /* exclude keys that are relevant for replication! */
+        AND [cc].[is_disabled] = 0
+    OPTION (RECOMPILE);
+';
