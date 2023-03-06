@@ -1,4 +1,4 @@
-# Recommended Tools and Scripts
+# Recommended MS SQL Related Tools and Scripts
 
 SQL Server specific online tools that might come at handy:
 
