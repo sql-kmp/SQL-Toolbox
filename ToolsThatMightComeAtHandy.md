@@ -9,3 +9,7 @@
 ## Database-related Tools
 
 - ERD (explore, analyze, document and design your SQL database schema): [Azimutt](https://azimutt.app/)
+
+## Linux-related
+
+- [ShellCheck](https://www.shellcheck.net/): finds bugs in your shell scripts.
