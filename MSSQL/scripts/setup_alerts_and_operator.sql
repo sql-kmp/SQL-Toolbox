@@ -8,9 +8,9 @@
 
         @OperatorName          - A name/designation for the operator which will be configured.
                                  /!\ If the operator already exists, it will be re-created with @OperatorEMail as new email address.
-                                 Configuration of notifications as well as the operator will be skipped if NULL (alerts will be created!).
+                                 Configuration of notifications as well as the operator will be skipped if NULL (alerts will be created anyway).
         @OperatorEMail         - A semicolon-separated list of email addresses.
-                                 Configuration of notifications as well as the operator will be skipped if NULL (alerts will be created!).
+                                 Configuration of notifications as well as the operator will be skipped if NULL (alerts will be created anyway).
         @AddAOAGAlerts         - Defines whether alerts related to AlwaysOn availability groups should be created. Default value is 1.
                                  If SERVERPROPERTY('IsHadrEnabled') equals 0 or is NULL, creation of these warning messages is skipped.
         @SetAsFailSafeOperator - Defines whether @OperatorName should become the fail-safe operator. Default value is 1.
@@ -21,6 +21,7 @@
     Changelog
     ---------
 
+    2023-04-03 KMP Alerts for potential attacks added.
     2023-01-19 KMP Configuration as fail-safe operator controllable via parameters.
                    Clarifications in comments and descriptions.
     2023-01-17 KMP Name pattern for SQL Server agent service name changed to consider other installation languages (issue #2).
@@ -73,7 +74,7 @@ DECLARE @OperatorEMail NVARCHAR(128) = NULL;
 DECLARE @AddAOAGAlerts BIT = 1;
 DECLARE @SetAsFailSafeOperator BIT = 1;
 
-/*    *********************************************************************************
+/*  *********************************************************************************
     *                    DO NOT CHANGE ANYTHING AFTER THIS LINE!                    *
     ********************************************************************************* */
 
@@ -90,7 +91,9 @@ VALUES
     (823, 0, N'Error 823: database integrity at risk'),
     (824, 0, N'Error 824: database integrity at risk'),
     (825, 0, N'Error 825: database integrity at risk'),
-    (17810, 0, N'Error 17810: dedicated administrator connection already exists'),
+    (17810, 0, N'Error 17810: dedicated administrator connection already exists (potential attack)'),
+    (17832, 0, N'Error 17832: structurally invalid login packet (potential attack)'),
+    (17836, 0, N'Error 17836: mismatch between specified length and number of bytes read (potential attack)'),
     (0, 17, N'Severity 17 - insufficient resources'),
     (0, 18, N'Severity 18 - non-fatal internal error'),
     (0, 19, N'Severity 19 - fatal resource error'),
