@@ -25,5 +25,6 @@ Interesting, but currently not completely tested and evaluated, simply because t
 - [SQL Server Toolbox](https://github.com/SparkhoundSQL/sql-server-toolbox) by [William Assaf](https://www.sqltact.com/)
 - [project tigertoolbox](https://github.com/microsoft/tigertoolbox) by Microsoft
 - [MinionWare](https://www.minionware.net/) - I've just heard but not investigated further yet.
+- [Azure Synapse Toolbox](https://github.com/microsoft/Azure_Synapse_Toolbox) - I've just heard but not investigated further yet.
 
 The lists are by no means complete and will be updated over time.
