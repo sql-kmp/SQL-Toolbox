@@ -63,6 +63,7 @@ open DB_CURSOR
 go
 
 create table ##results (
+    dbid int,
     database_name sysname(30),
     dbowner sysname(30),
     segment smallint,
@@ -87,7 +88,8 @@ select @owner_suid = suid
     where name = ''' +  @dbname + '''
 
 insert into ##results
-select ''' + @dbname + ''' as database_name,
+select "dbid" = db_id(''' + @dbname + '''),
+        "database_name" = ''' + @dbname + ''',
         "dbowner" = suser_name(@owner_suid),
         segment,
         free_space,
@@ -108,11 +110,24 @@ deallocate DB_CURSOR
 go
 
 select instance = @@servername,
-    r.*,
+    r.database_name,
+    r.dbowner,
+    "readonly" = case (d.status & 1024)
+        when 1024 then 1
+        else 0
+    end,
+    r.segment,
+    r.free_space,
+    r.status,
+    r.suid,
+    r.user_name,
     mitigation = 'exec sp_modifythreshold "' + database_name + '", '
         + ( select name from syssegments seg where seg.segment = r.segment )
-        + ', ' + cast(free_space as varchar(10))
+        + ', ' + cast(free_space as varchar(10)),
+    r.proc_name
 from ##results as r
+    inner join master..sysdatabases as d
+        on r.dbid = d.dbid
 
 drop table ##results
 go
