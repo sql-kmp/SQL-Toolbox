@@ -4,6 +4,13 @@
     This script searches for untrusted foreign keys as well as check constraints
     and generates a SQL query to fix these constraints.
 
+	Be very careful when executing the statement(s) to fix untrusted constraints
+	on a production database. Performing a foreign key check results in a scan of
+	the entire child table, joining with the parent table. If the tables are large,
+	this can be a very resource intensive operation that locks the tables until
+	the operation is complete. Therefore, you should perform this operation during
+	a maintenance window.
+
     Parameter(s) to set or changes to make in advance:
 
         None.
@@ -11,7 +18,7 @@
     Changelog
     ---------
     
-	2023-06-14	KMP temporary table for results added
+	2023-06-14	KMP temporary table for results added, explanation added
     2023-02-02  KMP check each database (using sp_MSforeachdb), fully qualified object names
     2023-01-18  KMP Initial release.
     
