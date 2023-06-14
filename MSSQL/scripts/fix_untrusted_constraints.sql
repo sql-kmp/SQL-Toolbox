@@ -11,6 +11,9 @@
 	the operation is complete. Therefore, you should perform this operation during
 	a maintenance window.
 
+	If error 547 occurs when running the statements for remediation, identify and
+	correct the orphaned records.
+
     Parameter(s) to set or changes to make in advance:
 
         None.
@@ -18,7 +21,8 @@
     Changelog
     ---------
     
-	2023-06-14	KMP temporary table for results added, explanation added
+	2023-06-14	KMP temporary table for results added, explanations added,
+				fixing statement as batch (GO added)
     2023-02-02  KMP check each database (using sp_MSforeachdb), fully qualified object names
     2023-01-18  KMP Initial release.
     
@@ -71,7 +75,8 @@ INSERT INTO [#tmpResults]
 			QUOTENAME([s].[name]) + N''.'' + QUOTENAME([o].[name]) + N''.'' + QUOTENAME([fk].[name]) AS [untrusted_foreign_key],
 			''FOREIGN KEY CONSTRAINT'',
 			N''ALTER TABLE '' + QUOTENAME(DB_NAME()) + N''.'' + QUOTENAME([s].[name]) + N''.'' + QUOTENAME([o].[name])
-				+ N'' WITH CHECK CHECK CONSTRAINT '' + QUOTENAME([fk].[name]) + N'';'' AS [fix]
+				+ N'' WITH CHECK CHECK CONSTRAINT '' + QUOTENAME([fk].[name]) + N'';
+GO'' AS [fix]
 		FROM [sys].[foreign_keys] AS [fk]
 			INNER JOIN [sys].[objects] AS [o] ON [fk].[parent_object_id] = [o].[object_id]
 			INNER JOIN [sys].[schemas] AS [s] ON [o].[schema_id] = [s].[schema_id]
@@ -84,7 +89,8 @@ INSERT INTO [#tmpResults]
 			QUOTENAME([s].[name]) + N''.'' + QUOTENAME([o].[name]) + N''.'' + QUOTENAME([cc].[name]) AS [untrusted_check_constraint],
 			''CHECK CONSTRAINT'',
 			N''ALTER TABLE '' + QUOTENAME(DB_NAME()) + N''.'' + QUOTENAME([s].[name]) + N''.'' + QUOTENAME([o].[name])
-				+ N'' WITH CHECK CHECK CONSTRAINT '' + QUOTENAME([cc].[name]) + N'';'' AS [fix]
+				+ N'' WITH CHECK CHECK CONSTRAINT '' + QUOTENAME([cc].[name]) + N'';
+GO'' AS [fix]
 		FROM [sys].[check_constraints] AS [cc]
 			INNER JOIN [sys].[objects] [o] ON [cc].[parent_object_id] = [o].[object_id]
 			INNER JOIN [sys].[schemas] [s] ON [o].[schema_id] = [s].[schema_id]
