@@ -16,6 +16,7 @@
     Changelog
     ---------
 
+    2023-08-23  KMP Bugfix.
     2023-04-03  KMP Initial release.
 
     Known Issues
@@ -70,7 +71,7 @@ create table ##results (
     free_space unsigned int,
     status smallint,
     suid int,
-    user_name sysname(30),
+    user_name sysname(30) null,     /* allow NULL values, if suser_name() returns NULL */
     proc_name varchar(255)
 )
 
