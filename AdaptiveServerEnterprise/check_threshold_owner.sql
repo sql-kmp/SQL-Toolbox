@@ -16,6 +16,7 @@
     Changelog
     ---------
 
+    2023-09-01  KMP SQL statement to fix the issue modified.
     2023-08-23  KMP Bugfix.
     2023-04-03  KMP Initial release.
 
@@ -122,10 +123,10 @@ select instance = @@servername,
     r.status,
     r.suid,
     r.user_name,
-    mitigation = 'exec sp_modifythreshold "' + database_name + '", '
-        + ( select name from syssegments seg where seg.segment = r.segment )
-        + ', ' + cast(free_space as varchar(10)),
-    r.proc_name
+    fix = 'exec ' + database_name + '..sp_modifythreshold "' + database_name + '", '
+        + ( select name from syssegments seg where seg.segment = r.segment ) + ', '
+        + cast(free_space as varchar(10)) + ', '
+        + r.proc_name
 from ##results as r
     inner join master..sysdatabases as d
         on r.dbid = d.dbid
