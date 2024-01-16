@@ -55,6 +55,8 @@ Starting point should be a fully patched operating system. Ideally, the operatin
 
   You'll need additional ports if you are working in a clustered environment (Windows Server Failover Cluster, which is a requirement for AlwaysOn features).
 
+  ⚠ It's ==recommended best practice== to manage the firewall settings centrally with group policies.
+
 - [ ] NTFS cluster size (administrative command prompt):
 
   ```
@@ -127,7 +129,7 @@ Starting point should be a fully patched operating system. Ideally, the operatin
     Test-ADServiceAccount <gMSA>
     ```
 
-    ⚠The gMSA does not need to be a local administrator. Setup will automatically grant least privileges required.
+    ⚠ The gMSA does not need to be a local administrator. Setup will automatically grant least privileges required.
 
 - [ ] Design backup strategy and HA/DR related to RPO and RTO.
 
