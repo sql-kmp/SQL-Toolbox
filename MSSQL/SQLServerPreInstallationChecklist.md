@@ -37,12 +37,13 @@ Starting point should be a fully patched operating system. Ideally, the operatin
 
 - [ ] Port shares (see also [Configure the Windows Firewall to Allow SQL Server Access](https://docs.microsoft.com/en-us/sql/sql-server/install/configure-the-windows-firewall-to-allow-sql-server-access)):
 
-  | Port        | Usage                                                        |
-  | ----------- | ------------------------------------------------------------ |
-  | TCP 1433    | default SQL Server instance (database engine)[^1]            |
-  | TCP 1434    | Dedicated Admin Connection (default instance)[^2]            |
-  | UDP 1434    | SQL Server Browser, which is often disabled due to the customer's security policy |
-  | TCP/UDP 389 | Authentication (Windows authentication)                      |
+  | Port         | Usage                                                        |
+  | ------------ | ------------------------------------------------------------ |
+  | TCP 1433     | default SQL Server instance (database engine)[^1]            |
+  | TCP 1434     | Dedicated Admin Connection (default instance)[^2]            |
+  | UDP 1434     | SQL Server Browser, which is often disabled due to the customer's security policy |
+  | TCP/UDP 389  | Authentication (Windows authentication)                      |
+  | TCP/UDP 3343 | Cluster Service (WSFC, port is required during a node join operation) |
 
   [^1]:Named instances use dynamic ports, if not configured otherwise in the SQL Server Configuration Manager.
   [^2]:The port differs for named instances. It'll show up in the error log. You can configure a fixed port in the registry.
