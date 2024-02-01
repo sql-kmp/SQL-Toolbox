@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# SQL Server Management Studio Solution File, Format Version 18.00
+VisualStudioVersion = 15.0.28307.421
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{4F2E2C19-372F-40D8-9FA7-9D2138C6997A}") = "Troubleshooting query time-outs", "Troubleshooting query time-outs\Troubleshooting query time-outs.ssmssqlproj", "{6AA68581-CD8A-481A-9B2D-45E39C448DC0}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Default|Default = Default|Default
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{6AA68581-CD8A-481A-9B2D-45E39C448DC0}.Default|Default.ActiveCfg = Default
+		{255BA55C-8D41-4E84-8205-3B6953EAD2C5}.Default|Default.ActiveCfg = Default
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {43626B34-CE3F-4F4C-AFC2-BA804BE72A94}
+	EndGlobalSection
+EndGlobal
