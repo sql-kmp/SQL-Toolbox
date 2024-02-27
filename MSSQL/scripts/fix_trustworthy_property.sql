@@ -2,10 +2,10 @@
     fix_trustworthy_property.sql
 
     This script reports databases with TRUSTWORTHY property set to ON and generates
-	a SQL query to fix this issue.
+    a SQL query to fix this issue.
 
-	There are certain threats when TRUSTWORTHY is set to ON. It is therefore recommended
-	to switch it off.
+    There are certain threats when TRUSTWORTHY is set to ON. It is therefore recommended
+    to switch it off.
 
     Parameter(s) to set or changes to make in advance:
 
@@ -14,6 +14,7 @@
     Changelog
     ---------
     
+    2024-02-27  KMP Bug fix.
     2023-07-04  KMP Initial release.
     
     Known Issues
@@ -24,7 +25,7 @@
     The MIT License
     ---------------
 
-    Copyright (c) 2023 Kai-Micael Preiﬂ.
+    Copyright (c) 2023-2024 Kai-Micael Preiﬂ.
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -52,11 +53,11 @@ SET NOCOUNT ON;
 GO
 
 SELECT [name] AS [database]
-		, [create_date]
-		, SUSER_SNAME([owner_sid]) AS [dbowner]
-		, [is_trustworthy_on]
-		, N'ALTER DATABASE ' + QUOTENAME(DB_NAME()) + ' SET TRUSTWORTHY ON;' AS [fix]
-	FROM [master].[sys].[databases]
-	WHERE [name] <> N'msdb'			/* Microsoft obviously couldn't solve it better ... */ 
-		AND [is_trustworthy_on] = 1
-	OPTION (RECOMPILE);
+        , [create_date]
+        , SUSER_SNAME([owner_sid]) AS [dbowner]
+        , [is_trustworthy_on]
+        , N'ALTER DATABASE ' + QUOTENAME([name]) + ' SET TRUSTWORTHY OFF;' AS [fix]
+    FROM [master].[sys].[databases]
+    WHERE [name] <> N'msdb'            /* Microsoft obviously couldn't solve it better ... */ 
+        AND [is_trustworthy_on] = 1
+    OPTION (RECOMPILE);
