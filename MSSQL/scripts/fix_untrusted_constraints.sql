@@ -4,15 +4,15 @@
     This script searches for untrusted foreign keys as well as check constraints
     and generates a SQL query to fix these constraints.
 
-	Be very careful when executing the statement(s) to fix untrusted constraints
-	on a production database. Performing a foreign key check results in a scan of
-	the entire child table, joining with the parent table. If the tables are large,
-	this can be a very resource intensive operation that locks the tables until
-	the operation is complete. Therefore, you should perform this operation during
-	a maintenance window.
+    Be very careful when executing the statement(s) to fix untrusted constraints
+    on a production database. Performing a foreign key check results in a scan of
+    the entire child table, joining with the parent table. If the tables are large,
+    this can be a very resource intensive operation that locks the tables until
+    the operation is complete. Therefore, you should perform this operation during
+    a maintenance window.
 
-	If error 547 occurs when running the statements for remediation, identify and
-	correct the orphaned records.
+    If error 547 occurs when running the statements for remediation, identify and
+    correct the orphaned records.
 
     Parameter(s) to set or changes to make in advance:
 
@@ -21,8 +21,8 @@
     Changelog
     ---------
     
-	2023-06-14	KMP temporary table for results added, explanations added,
-				fixing statement as batch (GO added)
+    2023-06-14  KMP temporary table for results added, explanations added,
+                    fixing statement as batch (GO added)
     2023-02-02  KMP check each database (using sp_MSforeachdb), fully qualified object names
     2023-01-18  KMP Initial release.
     
@@ -34,7 +34,7 @@
     The MIT License
     ---------------
 
-    Copyright (c) 2023 Kai-Micael Preiß.
+    Copyright (c) 2023-2024 Kai-Micael Preiß.
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -61,8 +61,8 @@ GO
 CREATE TABLE [#tmpResults] (
     [database] SYSNAME NOT NULL,
     [untrusted_constraint] SYSNAME NOT NULL,
-	[type] VARCHAR(30) NOT NULL,
-	[fix] NVARCHAR(4000) NULL
+    [type] VARCHAR(30) NOT NULL,
+    [fix] NVARCHAR(4000) NULL
 );
 
 EXEC sp_MSforeachdb N'
@@ -71,38 +71,38 @@ USE [?];
 SET NOCOUNT ON;
 
 INSERT INTO [#tmpResults]
-	SELECT DB_NAME() [database],
-			QUOTENAME([s].[name]) + N''.'' + QUOTENAME([o].[name]) + N''.'' + QUOTENAME([fk].[name]) AS [untrusted_foreign_key],
-			''FOREIGN KEY CONSTRAINT'',
-			N''ALTER TABLE '' + QUOTENAME(DB_NAME()) + N''.'' + QUOTENAME([s].[name]) + N''.'' + QUOTENAME([o].[name])
-				+ N'' WITH CHECK CHECK CONSTRAINT '' + QUOTENAME([fk].[name]) + N'';
+    SELECT DB_NAME() [database],
+            QUOTENAME([s].[name]) + N''.'' + QUOTENAME([o].[name]) + N''.'' + QUOTENAME([fk].[name]) AS [untrusted_foreign_key],
+            ''FOREIGN KEY CONSTRAINT'',
+            N''ALTER TABLE '' + QUOTENAME(DB_NAME()) + N''.'' + QUOTENAME([s].[name]) + N''.'' + QUOTENAME([o].[name])
+                + N'' WITH CHECK CHECK CONSTRAINT '' + QUOTENAME([fk].[name]) + N'';
 GO'' AS [fix]
-		FROM [sys].[foreign_keys] AS [fk]
-			INNER JOIN [sys].[objects] AS [o] ON [fk].[parent_object_id] = [o].[object_id]
-			INNER JOIN [sys].[schemas] AS [s] ON [o].[schema_id] = [s].[schema_id]
-		WHERE [fk].[is_not_trusted] = 1
-			AND [fk].[is_not_for_replication] = 0        /* exclude keys that are relevant for replication! */
-		OPTION (RECOMPILE);
+        FROM [sys].[foreign_keys] AS [fk]
+            INNER JOIN [sys].[objects] AS [o] ON [fk].[parent_object_id] = [o].[object_id]
+            INNER JOIN [sys].[schemas] AS [s] ON [o].[schema_id] = [s].[schema_id]
+        WHERE [fk].[is_not_trusted] = 1
+            AND [fk].[is_not_for_replication] = 0        /* exclude keys that are relevant for replication! */
+        OPTION (RECOMPILE);
 
 INSERT INTO [#tmpResults]
-	SELECT DB_NAME() [database],
-			QUOTENAME([s].[name]) + N''.'' + QUOTENAME([o].[name]) + N''.'' + QUOTENAME([cc].[name]) AS [untrusted_check_constraint],
-			''CHECK CONSTRAINT'',
-			N''ALTER TABLE '' + QUOTENAME(DB_NAME()) + N''.'' + QUOTENAME([s].[name]) + N''.'' + QUOTENAME([o].[name])
-				+ N'' WITH CHECK CHECK CONSTRAINT '' + QUOTENAME([cc].[name]) + N'';
+    SELECT DB_NAME() [database],
+            QUOTENAME([s].[name]) + N''.'' + QUOTENAME([o].[name]) + N''.'' + QUOTENAME([cc].[name]) AS [untrusted_check_constraint],
+            ''CHECK CONSTRAINT'',
+            N''ALTER TABLE '' + QUOTENAME(DB_NAME()) + N''.'' + QUOTENAME([s].[name]) + N''.'' + QUOTENAME([o].[name])
+                + N'' WITH CHECK CHECK CONSTRAINT '' + QUOTENAME([cc].[name]) + N'';
 GO'' AS [fix]
-		FROM [sys].[check_constraints] AS [cc]
-			INNER JOIN [sys].[objects] [o] ON [cc].[parent_object_id] = [o].[object_id]
-			INNER JOIN [sys].[schemas] [s] ON [o].[schema_id] = [s].[schema_id]
-		WHERE [cc].[is_not_trusted] = 1
-			AND [cc].[is_not_for_replication] = 0        /* exclude keys that are relevant for replication! */
-			AND [cc].[is_disabled] = 0
-		OPTION (RECOMPILE);
+        FROM [sys].[check_constraints] AS [cc]
+            INNER JOIN [sys].[objects] [o] ON [cc].[parent_object_id] = [o].[object_id]
+            INNER JOIN [sys].[schemas] [s] ON [o].[schema_id] = [s].[schema_id]
+        WHERE [cc].[is_not_trusted] = 1
+            AND [cc].[is_not_for_replication] = 0        /* exclude keys that are relevant for replication! */
+            AND [cc].[is_disabled] = 0
+        OPTION (RECOMPILE);
 ';
 
 SELECT *
     FROM [#tmpResults]
-	ORDER BY [database], [untrusted_constraint]
-	OPTION (RECOMPILE);
+    ORDER BY [database], [untrusted_constraint]
+    OPTION (RECOMPILE);
 
 DROP TABLE [#tmpResults];

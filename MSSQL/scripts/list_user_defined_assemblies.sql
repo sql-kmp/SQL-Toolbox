@@ -2,7 +2,7 @@
     list_user_defined_assemblies.sql
 
     This script lists all user-defined assemblies. I found this very useful when further
-	investigating databases that had the TRUSTWORTHY property set to ON.
+    investigating databases that had the TRUSTWORTHY property set to ON.
 
     Parameter(s) to set or changes to make in advance:
 
@@ -21,7 +21,7 @@
     The MIT License
     ---------------
 
-    Copyright (c) 2023 Kai-Micael Preiﬂ.
+    Copyright (c) 2023-2024 Kai-Micael Preiﬂ.
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -48,10 +48,10 @@ GO
 CREATE TABLE [#tmpResults] (
     [database] SYSNAME NOT NULL,
     [assembly_name] SYSNAME NOT NULL,
-	[permission_set_desc] NVARCHAR(120) NULL,
-	[create_date] DATETIME NOT NULL,
-	[modify_date] DATETIME NOT NULL,
-	[is_user_defined] BIT NULL
+    [permission_set_desc] NVARCHAR(120) NULL,
+    [create_date] DATETIME NOT NULL,
+    [modify_date] DATETIME NOT NULL,
+    [is_user_defined] BIT NULL
 );
 
 EXEC sp_MSforeachdb N'
@@ -61,19 +61,19 @@ SET NOCOUNT ON;
 
 INSERT INTO [#tmpResults]
 SELECT DB_NAME() AS [database]
-		, [name] AS [assembly_name]
-		, [permission_set_desc]
-		, [create_date]
-		, [modify_date]
-		, [is_user_defined]
-	FROM [sys].[assemblies]
-	WHERE [is_user_defined] = 1
-	OPTION (RECOMPILE);
+        , [name] AS [assembly_name]
+        , [permission_set_desc]
+        , [create_date]
+        , [modify_date]
+        , [is_user_defined]
+    FROM [sys].[assemblies]
+    WHERE [is_user_defined] = 1
+    OPTION (RECOMPILE);
 ';
 
 SELECT *
     FROM [#tmpResults]
-	ORDER BY [database], [assembly_name]
-	OPTION (RECOMPILE);
+    ORDER BY [database], [assembly_name]
+    OPTION (RECOMPILE);
 
 DROP TABLE [#tmpResults];
