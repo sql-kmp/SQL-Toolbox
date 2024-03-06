@@ -2,7 +2,7 @@
     CLR_exploration.sql
 
     The script provides an overview of user-defined assemblies.
-    
+
     Changelog
     ---------
 
@@ -12,8 +12,11 @@
     ------------
 
     - Hashes must be calculated row by row with a CURSOR due to
-      error 8152 (String or binary data would be truncated.) for
-      some assembly files. An UPDATE clause would fail as a whole.
+      error 8152 (String or binary data would be truncated.),
+      if [content] is too large.
+    - Within the dynamic SQL statement you need to leave the tabs
+      in place. If you would substitue them by spaces, the statement
+      becomes too long for [sp_MSforeachdb].
 
     The MIT License
     ---------------
@@ -77,7 +80,7 @@ CREATE TABLE [#assembly_modules] (
     [srv] SYSNAME NOT NULL,
     [database_name] SYSNAME NOT NULL,
     [object_name] NVARCHAR(512) NULL,
-    [assembly_name] SYSNAME    NULL,
+    [assembly_name] SYSNAME NULL,
     [assembly_class] SYSNAME NULL,
     [assembly_method] SYSNAME NULL
 );
@@ -94,27 +97,27 @@ CREATE TABLE [#trusted_assemblies] (
 EXEC [master].[sys].[sp_MSforeachdb] N'USE [?];
 
 INSERT INTO [#assemblies]
-    SELECT @@SERVERNAME [srv],
-            DB_NAME() [database_name],
-            [a].[name] [assembly_name],
-            [a].[principal_id],
-            USER_NAME([a].[principal_id]),
-            [a].[assembly_id],
-            [a].[clr_name],
-            [a].[permission_set_desc],
-            [a].[is_visible],
-            [af].[name] [assembly_filename],
-            [af].[content],
-            NULL [assembly_hash]    /* will be calculated in the next step */
-        FROM [sys].[assemblies] [a]
-            LEFT JOIN [sys].[assembly_files] [af]
-                ON [a].[assembly_id] = [af].[assembly_id]
-        WHERE [a].[is_user_defined] = 1
-        OPTION (RECOMPILE);
+	SELECT @@SERVERNAME,
+			DB_NAME(),
+			[a].[name],
+			[a].[principal_id],
+			USER_NAME([a].[principal_id]),
+			[a].[assembly_id],
+			[a].[clr_name],
+			[a].[permission_set_desc],
+			[a].[is_visible],
+			[af].[name],
+			[af].[content],
+			NULL				/* [assembly_hash] will be calculated in the next step */
+		FROM [sys].[assemblies] [a]
+			LEFT JOIN [sys].[assembly_files] [af]
+				ON [a].[assembly_id] = [af].[assembly_id]
+		WHERE [a].[is_user_defined] = 1
+		OPTION (RECOMPILE);
 
 DECLARE CRSR_ASS CURSOR FORWARD_ONLY
-    FOR SELECT [id], [assembly_hash] FROM [#assemblies]
-    FOR UPDATE OF [assembly_hash];
+	FOR SELECT [id], [assembly_hash] FROM [#assemblies]
+	FOR UPDATE OF [assembly_hash];
 
 OPEN CRSR_ASS;
 
@@ -124,42 +127,42 @@ FETCH NEXT FROM CRSR_ASS INTO @id, @assembly_hash;
 
 WHILE @@FETCH_STATUS = 0
 BEGIN
-    UPDATE [#assemblies]
-        SET [assembly_hash] = HASHBYTES(''SHA2_512'', [content])
-        WHERE CURRENT OF CRSR_ASS;
-    
-    FETCH NEXT FROM CRSR_ASS INTO @id, @assembly_hash;
+	UPDATE [#assemblies]
+		SET [assembly_hash] = HASHBYTES(''SHA2_512'', [content])
+		WHERE CURRENT OF CRSR_ASS;
+	
+	FETCH NEXT FROM CRSR_ASS INTO @id, @assembly_hash;
 END;
 
 CLOSE CRSR_ASS;
 DEALLOCATE CRSR_ASS;
 
 INSERT INTO [#assembly_modules]
-    SELECT @@SERVERNAME [srv],
-            DB_NAME() [database_name],
-            QUOTENAME(SCHEMA_NAME([o].[schema_id])) + N''.''
-                + QUOTENAME([o].[name]) [object_name],
-            [a].[name] [assembly_name],
-            [am].[assembly_class],
-            [am].[assembly_method]
-        FROM [sys].[assembly_modules] [am]
-            LEFT JOIN [sys].[objects] [o]
-                ON [am].[object_id] = [o].[object_id]
-            LEFT JOIN [sys].[assemblies] [a]
-                ON [am].[assembly_id] = [a].[assembly_id]
-        OPTION (RECOMPILE);
+	SELECT @@SERVERNAME,
+			DB_NAME(),
+			QUOTENAME(SCHEMA_NAME([o].[schema_id])) + N''.''
+				+ QUOTENAME([o].[name]),
+			[a].[name],
+			[am].[assembly_class],
+			[am].[assembly_method]
+		FROM [sys].[assembly_modules] [am]
+			LEFT JOIN [sys].[objects] [o]
+				ON [am].[object_id] = [o].[object_id]
+			LEFT JOIN [sys].[assemblies] [a]
+				ON [am].[assembly_id] = [a].[assembly_id]
+		OPTION (RECOMPILE);
 
 IF ( CONVERT(TINYINT, SERVERPROPERTY(''ProductMajorVersion'')) >= 14 )
 BEGIN
-    INSERT INTO [#trusted_assemblies]
-        SELECT @@SERVERNAME [srv],
-                DB_NAME() [database_name],
-                [hash],
-                [description],
-                [create_date],
-                [created_by]
-            FROM [sys].[trusted_assemblies]
-            OPTION (RECOMPILE);
+	INSERT INTO [#trusted_assemblies]
+		SELECT @@SERVERNAME,
+				DB_NAME(),
+				[hash],
+				[description],
+				[create_date],
+				[created_by]
+			FROM [sys].[trusted_assemblies]
+			OPTION (RECOMPILE);
 END;
 ';
 
