@@ -26,5 +26,6 @@ Interesting, but currently not completely tested and evaluated, simply because t
 - [project tigertoolbox](https://github.com/microsoft/tigertoolbox) by Microsoft
 - [MinionWare](https://www.minionware.net/) - I've just heard but not investigated further yet.
 - [Azure Synapse Toolbox](https://github.com/microsoft/Azure_Synapse_Toolbox) - I've just heard but not investigated further yet.
+- [sp_CheckSecurity - Check Your SQL Server Security](https://straightpathsql.com/tool/sp_checksecurity/) - I've just heard but not investigated further yet.
 
 The lists are by no means complete and will be updated over time.
