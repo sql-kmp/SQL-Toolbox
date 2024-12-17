@@ -15,9 +15,12 @@
 
     Changelog
     ---------
-
-    2023-09-01  KMP SQL statement to fix the issue modified.
-    2023-08-23  KMP Bugfix.
+    
+    2024-12-17  KMP log output added (for use in scripts)
+    2024-07-08  KMP exclude databases created with for load option 
+    2023-10-24  KMP exclude offline databases (results in an error otherwise)
+                    allow NULLs for ##result.user_name
+    2023-09-01  KMP sql statement to fix the issue modified
     2023-04-03  KMP Initial release.
 
     Known Issues
@@ -28,7 +31,7 @@
     The MIT License
     ---------------
 
-    Copyright (c) 2023 Kai-Micael Preiß.
+    Copyright (c) 2023-2024 Kai-Micael Preiß.
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -58,10 +61,19 @@ go
 declare DB_CURSOR cursor for
     select name
         from master..sysdatabases
+        where status & 32 != 32     /* exclude databases created with for load option */
+            and status2 & 16 != 16  /* exclude offline databases */
+            and status2 & 32 != 32  /* exclude databases in state offline until recovery completes */
     for read only
 go
 
 open DB_CURSOR
+go
+
+if object_id('##results') is not null
+begin
+    drop table ##results
+end
 go
 
 create table ##results (
@@ -72,7 +84,7 @@ create table ##results (
     free_space unsigned int,
     status smallint,
     suid int,
-    user_name sysname(30) null,     /* allow NULL values, if suser_name() returns NULL */
+    user_name sysname(30) null,
     proc_name varchar(255)
 )
 
@@ -111,27 +123,48 @@ close DB_CURSOR
 deallocate DB_CURSOR
 go
 
-select instance = @@servername,
-    r.database_name,
-    r.dbowner,
-    "readonly" = case (d.status & 1024)
-        when 1024 then 1
-        else 0
-    end,
-    r.segment,
-    r.free_space,
-    r.status,
-    r.suid,
-    r.user_name,
-    fix = 'exec ' + database_name + '..sp_modifythreshold "' + database_name + '", '
-        + ( select name from syssegments seg where seg.segment = r.segment ) + ', '
-        + cast(free_space as varchar(10)) + ', '
-        + r.proc_name
-from ##results as r
-    inner join master..sysdatabases as d
-        on r.dbid = d.dbid
+declare @msg varchar(1000)
+declare @row_count int
 
-drop table ##results
+select @msg = convert(varchar(30), getdate(), 140) + char(9) + @@servername + char(9)
+
+select @row_count = count(*)
+    from ##results
+
+if @row_count > 0
+begin
+    select @msg = @msg + '[E!] ' + convert(varchar(10), @row_count) + ' threshold value(s) found'
+    print @msg
+    select instance = @@servername,
+            r.database_name,
+            r.dbowner,
+            "readonly" = case (d.status & 1024)
+                when 1024 then 1
+                else 0
+            end,
+            r.segment,
+            r.free_space,
+            r.status,
+            r.suid,
+            r.user_name,
+            fix = 'exec ' + database_name + '..sp_modifythreshold "' + database_name + '", '
+                + ( select name from syssegments seg where seg.segment = r.segment ) + ', '
+                + cast(free_space as varchar(10)) + ', '
+                + r.proc_name
+        from ##results as r
+            inner join master..sysdatabases as d
+                on r.dbid = d.dbid
+end
+else
+begin
+    select @msg = @msg + '[OK] No mismatches between dbowner and threshold owners found.'
+    print @msg
+end
+
+if object_id('##results') is not null
+begin
+    drop table ##results
+end
 go
 
 set nocount off

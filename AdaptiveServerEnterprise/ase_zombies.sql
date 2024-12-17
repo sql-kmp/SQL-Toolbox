@@ -20,7 +20,7 @@
     The MIT License
     ---------------
 
-    Copyright (c) 2023 Kai-Micael Preiß.
+    Copyright (c) 2023-2024 Kai-Micael Preiß.
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
