@@ -16,7 +16,7 @@
     Changelog
     ---------
     
-    2024-12-17  KMP log output added (for use in scripts)
+    2024-12-17  KMP log output added (for use in scripts), check for temp table added
     2024-07-08  KMP exclude databases created with for load option 
     2023-10-24  KMP exclude offline databases (results in an error otherwise)
                     allow NULLs for ##result.user_name
@@ -133,7 +133,7 @@ select @row_count = count(*)
 
 if @row_count > 0
 begin
-    select @msg = @msg + '[E!] ' + convert(varchar(10), @row_count) + ' threshold value(s) found'
+    select @msg = @msg + '[E!] ' + convert(varchar(10), @row_count) + ' mismatch(es) between dbowner and threshold owner(s) found:'
     print @msg
     select instance = @@servername,
             r.database_name,
