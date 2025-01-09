@@ -42,9 +42,9 @@ Starting point should be a fully patched operating system. Ideally, the operatin
   Foreach ($NIC in $NICs)
   {
     $powerMgmt = Get-WmiObject MSPower_DeviceEnable -Namespace root\WMI | ? { $_.InstanceName -match [regex]::Escape($NIC.PNPDeviceID) }
-    If ($powerMgmt.Enable -eq $False)
+    If ($powerMgmt.Enable -eq $True)
     {
-      $powerMgmt.Enable = $True
+      $powerMgmt.Enable = $False
       $powerMgmt.PSBase.Put()
     }
   }
