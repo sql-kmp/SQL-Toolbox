@@ -35,7 +35,7 @@ Starting point should be a fully patched operating system. Ideally, the operatin
 
   Don't forget to check BIOS' power plan settings.
 
-- [ ] Disable "Allow the computer to turn off this device to save power" on network interface cards:
+- [ ] Disable "Allow the computer to turn off this device to save power" on network interface cards (administrative prompt):
 
   ```powershell
   $NICs = Get-NetAdapter
@@ -48,6 +48,12 @@ Starting point should be a fully patched operating system. Ideally, the operatin
       $powerMgmt.PSBase.Put()
     }
   }
+  ```
+
+  You can check the setting in advance (and after the change):
+
+  ```powershell
+  Get-NetAdapterPowerManagement | Format-Table Name, AllowComputerToTurnOffDevice
   ```
 
 - [ ] Port shares (see also [Configure the Windows Firewall to Allow SQL Server Access](https://docs.microsoft.com/en-us/sql/sql-server/install/configure-the-windows-firewall-to-allow-sql-server-access)):
