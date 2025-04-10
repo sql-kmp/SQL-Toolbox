@@ -1,8 +1,7 @@
 /*
     list_user_defined_assemblies.sql
 
-    This script lists all user-defined assemblies. I found this very useful when further
-    investigating databases that had the TRUSTWORTHY property set to ON.
+    This script lists all user-defined assemblies.
 
     Parameter(s) to set or changes to make in advance:
 
@@ -21,7 +20,7 @@
     The MIT License
     ---------------
 
-    Copyright (c) 2023-2024 Kai-Micael Preiﬂ.
+    Copyright (c) 2023-2025 Kai-Micael Preiﬂ.
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
