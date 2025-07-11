@@ -21,15 +21,24 @@ Starting point should be a fully patched operating system. Ideally, the operatin
 
 ⚠ The hardware clock should always be set to **UTC**. Period! If you do not agree, please read this: [The Worst Server Setup Mistake You Can Make](http://yellerapp.com/posts/2015-01-12-the-worst-server-setup-you-can-make.html)
 
+- [ ] Check your permissions:
+
+  Domain admin permissions are required for some steps. This can be checked as follows:
+  ```powershell
+  (whoami /groups | Select-String "-512\s") -ne $null
+  ```
+
+  You wanna see `True` in the result.
+
 - [ ] OS's power plan setting:
 
-  ```
+  ```powershell
   POWERCFG /GETACTIVESCHEME
   ```
 
   You want to see *"High performance"* in the result. If this is not the case:
 
-  ```
+  ```powershell
   POWERCFG /SETACTIVE 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c
   ```
 
