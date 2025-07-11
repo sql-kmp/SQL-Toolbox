@@ -33,7 +33,14 @@ Starting point should be a fully patched operating system. Ideally, the operatin
   POWERCFG /SETACTIVE 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c
   ```
 
-  Don't forget to check BIOS' power plan settings.
+  As an elegant one-liner (administrative PowerShell prompt):
+
+  ```powershell
+  # administrative PowerShell prompt
+  if ((powercfg /getactivescheme) -notmatch '8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c') { powercfg /setactive 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c }
+  ```
+
+  ⚠ Don't forget to check BIOS' power plan settings.
 
 - [ ] Disable "Allow the computer to turn off this device to save power" on network interface cards (administrative prompt):
 
