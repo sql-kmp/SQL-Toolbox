@@ -23,9 +23,9 @@ Starting point should be a fully patched operating system. Ideally, the operatin
 
 - [ ] Check your permissions:
 
-  Domain admin permissions are required for some steps. This can be checked as follows:
+  Domain or enterprise admin permissions are required for some steps. This can be checked as follows:
   ```powershell
-  (whoami /groups | Select-String "-512\s") -ne $null
+  ((whoami /groups | Select-String "-512\s") -ne $null) -or ((whoami /groups | Select-String "-519\s") -ne $null)
   ```
 
   You wanna see `True` in the result.
@@ -161,9 +161,19 @@ Starting point should be a fully patched operating system. Ideally, the operatin
     ```powershell
     # check whether there is already one (no output, if you don't have sufficient permissions!):
     Get-KdsRootKey
-    # if not:
+    ```
+
+    If you do not have the required permissions, `Get-KdsRootKey` returns nothing. You can't distinguish between missing permissions and a non-existent root key. This should do the trick:
+    ```powershell
+    if ($rootKeys = Get-KdsRootKey) { $rootKeys } elseif (-not (((whoami /groups | Select-String "-512\s") -ne $null) -or ((whoami /groups | Select-String "-519\s") -ne $null))) { "Domain or Enterprise Admin permissions required!" } else { "No KDS root key found." }
+    ```
+
+    If there is no KDS root key yet, it can be generated as follows:
+    ```powershell
     Add-KdsRootKey -EffectiveImmediately
     ```
+
+    ⚠ As a precaution, the AD administrator should be consulted and it should be checked that there really is no KDS root key yet. There should only be 1 key in the AD!
 
     > Using Add-KdsRootKey  -EffectiveImmediately will add a root key to the target DC which will be used by the KDS service immediately. However, other domain controllers  will not be able to use the root key until replication is successful.
     > (source: [Create the Key Distribution Services KDS Root Key](https://docs.microsoft.com/en-us/windows-server/security/group-managed-service-accounts/create-the-key-distribution-services-kds-root-key))
