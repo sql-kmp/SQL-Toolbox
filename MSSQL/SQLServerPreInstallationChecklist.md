@@ -150,6 +150,12 @@ Starting point should be a fully patched operating system. Ideally, the operatin
     Add-WindowsFeature -Name "RSAT-AD-PowerShell" –IncludeAllSubFeature
     ```
 
+    In one line:
+
+    ```powershell
+    try { Import-Module ActiveDirectory -ErrorAction Stop } catch { Add-WindowsFeature -Name "RSAT-AD-PowerShell" -IncludeAllSubFeature }
+    ```
+
   - [ ] KDS Rootkey (domain admin privileges required):
 
     ```powershell
