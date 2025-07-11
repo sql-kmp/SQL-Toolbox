@@ -72,15 +72,15 @@ Starting point should be a fully patched operating system. Ideally, the operatin
   Get-NetAdapterPowerManagement | Format-Table Name, AllowComputerToTurnOffDevice
   ```
 
-- [ ] Port shares (see also [Configure the Windows Firewall to Allow SQL Server Access](https://docs.microsoft.com/en-us/sql/sql-server/install/configure-the-windows-firewall-to-allow-sql-server-access)):
+- [ ] Firewall settings (see also [Configure the Windows Firewall to Allow SQL Server Access](https://docs.microsoft.com/en-us/sql/sql-server/install/configure-the-windows-firewall-to-allow-sql-server-access)):
 
-  | Port         | Usage                                                        |
-  | ------------ | ------------------------------------------------------------ |
-  | TCP 1433     | default SQL Server instance (database engine)[^1]            |
-  | TCP 1434     | Dedicated Admin Connection (default instance)[^2]            |
+  | Port         | Usage                                                                             |
+  | ------------ | --------------------------------------------------------------------------------- |
+  | TCP 1433     | default SQL Server instance (database engine)[^1]                                 |
+  | TCP 1434     | Dedicated Admin Connection (default instance)[^2]                                 |
   | UDP 1434     | SQL Server Browser, which is often disabled due to the customer's security policy |
-  | TCP/UDP 389  | Authentication (Windows authentication)                      |
-  | TCP/UDP 3343 | Cluster Service (WSFC, port is required during a node join operation) |
+  | TCP/UDP 389  | Authentication (Windows authentication)                                           |
+  | TCP/UDP 3343 | Cluster Service (WSFC, port is required during a node join operation)             |
 
   [^1]:Named instances use dynamic ports, if not configured otherwise in the SQL Server Configuration Manager.
   [^2]:The port differs for named instances. It'll show up in the error log. You can configure a fixed port in the registry.
@@ -89,6 +89,12 @@ Starting point should be a fully patched operating system. Ideally, the operatin
 
   ```powershell
   New-NetFirewallRule -DisplayName "SQLServer default instance" -Direction Inbound -LocalPort 1433 -Protocol TCP -Action Allow
+  ```
+
+  Firewall settings for a specific port can be checked as follows:
+
+  ```powershell
+  Get-NetFirewallPortFilter | Where-Object { $_.LocalPort -eq 1433 } | Get-NetFirewallRule
   ```
 
   You'll need additional ports if you are working in a clustered environment (Windows Server Failover Cluster, which is a requirement for AlwaysOn features).
