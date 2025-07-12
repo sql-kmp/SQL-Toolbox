@@ -112,19 +112,19 @@ Starting point should be a fully patched operating system. Ideally, the operatin
   fsutil fsinfo ntfsinfo [drive]
   ```
 
-  | Files                             | recommended cluster size                                     |
-  | --------------------------------- | ------------------------------------------------------------ |
-  | Binaries (C:)[^3]                 | 4k = default cluster size (informational)                    |
-  | data files (user databases)       | 64k, 1MB respectively                                        |
-  | database log files (incl. tempdb) | 8k, 64k respectively                                         |
-  | data files (tempdb)               | 64k, 1MB respectively / on dedicated fast storage            |
-  | backups                           | 64k, 1MB respectively                                        |
-  | (error) log files[^4]             | 4k = default cluster size                                    |
+  | Files                             | recommended cluster size                                                                  |
+  | --------------------------------- | ----------------------------------------------------------------------------------------- |
+  | Binaries (C:)[^4]                 | 4k = default cluster size (informational)                                                 |
+  | data files (user databases)       | 64k, 1MB respectively                                                                     |
+  | database log files (incl. tempdb) | 8k, 64k respectively                                                                      |
+  | data files (tempdb)               | 64k, 1MB respectively / on dedicated fast storage                                         |
+  | backups                           | 64k, 1MB respectively                                                                     |
+  | (error) log files[^5]             | 4k = default cluster size                                                                 |
   | instance root w/ system databases | 4k should be ok, usually error log and trace files are stored in this directory structure |
-  | FILESTREAM data                   | 64k, 1MB respectively                                        |
+  | FILESTREAM data                   | 64k, 1MB respectively                                                                     |
 
-  [^3]:at least 128 GB of space nowadays (i.e. 2021 currently)
-  [^4]:Sometimes it's a good idea to store the error log and trace files on a separate volume.
+  [^4]:at least 128 GB of space nowadays (i.e. 2021 currently)
+  [^5]:Sometimes it's a good idea to store the error log and trace files on a separate volume.
 
 - [ ] disable compression:
 
