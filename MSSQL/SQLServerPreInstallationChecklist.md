@@ -74,16 +74,21 @@ Starting point should be a fully patched operating system. Ideally, the operatin
 
 - [ ] Firewall settings (see also [Configure the Windows Firewall to Allow SQL Server Access](https://docs.microsoft.com/en-us/sql/sql-server/install/configure-the-windows-firewall-to-allow-sql-server-access)):
 
-  | Port         | Usage                                                                             |
-  | ------------ | --------------------------------------------------------------------------------- |
-  | TCP 1433     | default SQL Server instance (database engine)[^1]                                 |
-  | TCP 1434     | Dedicated Admin Connection (default instance)[^2]                                 |
-  | UDP 1434     | SQL Server Browser, which is often disabled due to the customer's security policy |
-  | TCP/UDP 389  | Authentication (Windows authentication)                                           |
-  | TCP/UDP 3343 | Cluster Service (WSFC, port is required during a node join operation)             |
+  | Port         | Usage                                                                                  |
+  | ------------ | -------------------------------------------------------------------------------------- |
+  | TCP 1433     | default SQL Server instance (database engine)[^1]                                      |
+  | TCP 1434     | Dedicated Admin Connection (default instance)[^2]                                      |
+  | UDP 1434     | SQL Server Browser, which is often disabled due to the customer's security policy      |
+  | TCP/UDP 389  | Authentication (Windows authentication)                                                |
+  | TCP/UDP 3343 | Cluster Service (WSFC, port is required during a node join operation)                  |
+  | TCP 2383     | SSAS default instance, or SQL Server Analysis Services failover cluster                |
+  | TCP 2382     | SSAS named instance, or SSAS in SharePoint mode to support Power Pivot for SharePoint  |
+  | TCP 80/443   | PowerBI RS, or SSRS (IIS)                                                              |
+  | TCP 3343     | Cluster Service (required during a node join operation)[^3]                            |
 
   [^1]:Named instances use dynamic ports, if not configured otherwise in the SQL Server Configuration Manager.
   [^2]:The port differs for named instances. It'll show up in the error log. You can configure a fixed port in the registry.
+  [^3]:Additional information: [Service overview and network port requirements for Windows - Cluster service](https://learn.microsoft.com/en-us/troubleshoot/windows-server/networking/service-overview-and-network-port-requirements#cluster-service)
 
   PowerShell example (administrative prompt):
 
