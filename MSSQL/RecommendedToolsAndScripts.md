@@ -27,5 +27,6 @@ Interesting, but currently not completely tested and evaluated, simply because t
 - [MinionWare](https://www.minionware.net/) - I've just heard but not investigated further yet.
 - [Azure Synapse Toolbox](https://github.com/microsoft/Azure_Synapse_Toolbox) - I've just heard but not investigated further yet.
 - [sp_CheckSecurity - Check Your SQL Server Security](https://straightpathsql.com/tool/sp_checksecurity/) - I've just heard but not investigated further yet.
+- [Introducing sp_CheckAG: Check Your SQL Server Availability Groups for Availability Issues](https://straightpathsql.com/archives/2026/01/introducing-sp_checkag-check-your-sql-server-availability-groups-for-availability-issues/) - I've just heard but not investigated further yet.
 
 The lists are by no means complete and will be updated over time.
